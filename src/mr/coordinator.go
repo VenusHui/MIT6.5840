@@ -10,7 +10,7 @@ import (
 
 type Coordinator struct {
 	// Your definitions here.
-
+	taskList []Task
 }
 
 // Your code here -- RPC handlers for the worker to call.
@@ -19,7 +19,6 @@ type Coordinator struct {
 func (c *Coordinator) server() {
 	rpc.Register(c)
 	rpc.HandleHTTP()
-	// l, e := net.Listen("tcp", ":1234")
 	sockname := coordinatorSock()
 	os.Remove(sockname)
 	l, e := net.Listen("unix", sockname)
@@ -35,6 +34,13 @@ func (c *Coordinator) Done() bool {
 	ret := false
 
 	// Your code here.
+	ret = true
+	for _, task := range c.taskList {
+		if task.taskStatus != Completed {
+			ret = false
+			break
+		}
+	}
 
 	return ret
 }
@@ -46,6 +52,13 @@ func MakeCoordinator(files []string, nReduce int) *Coordinator {
 	c := Coordinator{}
 
 	// Your code here.
+	// generate tasks
+	id := 0
+	for _, fileName := range files {
+		task := Task{id: id, taskStatus: Idle, taskType: Map, fileName: fileName}
+		c.taskList = append(c.taskList, task)
+		id++
+	}
 
 	c.server()
 	return &c
